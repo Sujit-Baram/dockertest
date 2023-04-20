@@ -1,3 +1,5 @@
+cf.yml
+test.yml
 #!/bin/bash
 sudo apt update -y
 
