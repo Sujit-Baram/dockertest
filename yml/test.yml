@@ -1,0 +1,72 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Resources:
+  EC2Instance:
+    Type: "AWS::EC2::Instance"
+    Properties:
+      ImageId: "ami-06c4532923d4ba1ec"
+      InstanceType: "t2.micro"
+      AvailabilityZone: us-east-2c
+      SecurityGroups:
+        - Ref: InstanceSecurityGroup
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          sudo apt update -y
+          sudo apt install apt-transport-https ca-certificates curl software-properties-common -y
+          curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+          sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+          sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+          sudo apt update -y
+          sudo apt install docker-ce -y
+          sudo apt install apache2 -y 
+          sudo mkdir -p /tmp/deployment/
+          sudo chmod 777 /tmp/deployment/
+          sudo apt install wget -y
+          sudo apt install unzip -y
+          cd /tmp/deployment/
+          sudo git clone https://github.com/Sujit-Baram/dockertest.git .
+          cd /tmp/deployment/
+          sudo apt install default-jre -y
+          sudo apt install default-jdk -y
+          sudo apt install curl -y
+          curl -fsSL https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key | sudo tee /usr/share/keyrings/jenkins-keyring.asc > /dev/null
+          echo deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian-stable binary/ | sudo tee /etc/apt/sources.list.d/jenkins.list > /dev/null
+          sudo apt-get update -y
+          sudo apt-get install jenkins -y 
+          sudo systemctl start jenkins.service
+          sudo ufw allow OpenSSH
+          sudo ufw enable
+          sudo ufw allow 8080
+          sudo docker run -it -p 8081:80 -v /tmp/deployment/:/var/www/html/ --name dockertest -d ubuntu/apache2
+          sudo docker start dockertest
+          sudo chown -R jenkins:jenkins /tmp/deployment/
+      Tags:
+        - Key: "Name"
+          Value: "CICD"
+  InstanceSecurityGroup:
+    Type: "AWS::EC2::SecurityGroup"
+    Properties:
+      GroupName: "dockertest"
+      GroupDescription: "Enable SSH access and HTTP/S access from anywhere"
+      SecurityGroupIngress:
+        - IpProtocol: "tcp"
+          FromPort: "22"
+          ToPort: "22"
+          CidrIp: "0.0.0.0/0"
+        - IpProtocol: "tcp"
+          FromPort: "80"
+          ToPort: "80"
+          CidrIp: "0.0.0.0/0"
+        - IpProtocol: "tcp"
+          FromPort: "443"
+          ToPort: "443"
+          CidrIp: "0.0.0.0/0"
+        - IpProtocol: "tcp"
+          FromPort: "8080"
+          ToPort: "8080"
+          CidrIp: "0.0.0.0/0"
+        - IpProtocol: "tcp"
+          FromPort: 8081
+          ToPort: 8081
+          CidrIp: "0.0.0.0/0"
+          
