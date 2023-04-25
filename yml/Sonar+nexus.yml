@@ -37,8 +37,12 @@ Resources:
           sudo ufw allow OpenSSH
           sudo ufw enable
           sudo ufw allow 8080
-          sudo docker run -it -p 8081:80 -v /tmp/deployment/:/var/www/html/ --name dockertest -d ubuntu/apache2
-          sudo docker start dockertest
+          sudo ufw allow 8081
+          sudo ufw allow 9000
+          sudo docker run -it -p 9000:9000 --name sonarqube -d sonarqube
+          sudo docker start sonarqube
+          sudo docker run -it -p 8081:8081 --name nexus -d sonatype/nexus3
+          sudo docker start nexus
           sudo chown -R jenkins:jenkins /tmp/deployment/
       Tags:
         - Key: "Name"
@@ -68,5 +72,9 @@ Resources:
         - IpProtocol: "tcp"
           FromPort: 8081
           ToPort: 8081
+          CidrIp: "0.0.0.0/0"
+        -  IpProtocol: "tcp"
+          FromPort: 9000
+          ToPort: 9000
           CidrIp: "0.0.0.0/0"
           
