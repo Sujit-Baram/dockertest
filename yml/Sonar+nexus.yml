@@ -4,8 +4,9 @@ Resources:
     Type: "AWS::EC2::Instance"
     Properties:
       ImageId: "ami-06c4532923d4ba1ec"
-      InstanceType: "t2.micro"
-      AvailabilityZone: us-east-2c
+      KeyName: "Sonarqube"
+      InstanceType: "t2.large"
+      AvailabilityZone: us-east-2b
       SecurityGroups:
         - Ref: InstanceSecurityGroup
       UserData:
@@ -23,9 +24,6 @@ Resources:
           sudo chmod 777 /tmp/deployment/
           sudo apt install wget -y
           sudo apt install unzip -y
-          cd /tmp/deployment/
-          sudo git clone https://github.com/Sujit-Baram/dockertest.git .
-          cd /tmp/deployment/
           sudo apt install default-jre -y
           sudo apt install default-jdk -y
           sudo apt install curl -y
@@ -44,6 +42,8 @@ Resources:
           sudo docker run -it -p 8081:8081 --name nexus -d sonatype/nexus3
           sudo docker start nexus
           sudo chown -R jenkins:jenkins /tmp/deployment/
+          sudo docker start sonarqube
+          sudo docker start nexus
       Tags:
         - Key: "Name"
           Value: "CICD"
@@ -73,7 +73,7 @@ Resources:
           FromPort: 8081
           ToPort: 8081
           CidrIp: "0.0.0.0/0"
-        -  IpProtocol: "tcp"
+        - IpProtocol: "tcp"
           FromPort: 9000
           ToPort: 9000
           CidrIp: "0.0.0.0/0"
