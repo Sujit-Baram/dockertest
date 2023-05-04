@@ -1,0 +1,129 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Resources:
+  MySecurityGroup1:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: "sonarandnexus"
+      GroupDescription: Security group 1
+      SecurityGroupIngress:
+        - IpProtocol: "tcp"
+          FromPort: "22"
+          ToPort: "22"
+          CidrIp: "0.0.0.0/0"
+        - IpProtocol: "tcp"
+          FromPort: "80"
+          ToPort: "80"
+          CidrIp: "0.0.0.0/0"
+        - IpProtocol: "tcp"
+          FromPort: "443"
+          ToPort: "443"
+          CidrIp: "0.0.0.0/0"
+        - IpProtocol: "tcp"
+          FromPort: "8080"
+          ToPort: "8080"
+          CidrIp: "0.0.0.0/0"
+        - IpProtocol: "tcp"
+          FromPort: 8081
+          ToPort: 8081
+          CidrIp: "0.0.0.0/0"
+        - IpProtocol: "tcp"
+          FromPort: 9000
+          ToPort: 9000
+          CidrIp: "0.0.0.0/0"
+  MySecurityGroup2:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: "tomcat"
+      GroupDescription: Security group 2
+      SecurityGroupIngress:
+        - IpProtocol: "tcp"
+          FromPort: "22"
+          ToPort: "22"
+          CidrIp: "0.0.0.0/0"
+        - IpProtocol: "tcp"
+          FromPort: "80"
+          ToPort: "80"
+          CidrIp: "0.0.0.0/0"
+        - IpProtocol: "tcp"
+          FromPort: "8080"
+          ToPort: "8080"
+          CidrIp: "0.0.0.0/0"
+        - IpProtocol: "tcp"
+          FromPort: "443"
+          ToPort: "443"
+          CidrIp: "0.0.0.0/0"
+  EC2Instance:
+    Type: "AWS::EC2::Instance"
+    Properties:
+      ImageId: "ami-06c4532923d4ba1ec"
+      KeyName: "Sonarqube"
+      InstanceType: "t2.large"
+      AvailabilityZone: us-east-2b
+      SecurityGroupIds:
+        - !Ref MySecurityGroup1
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          sudo apt update -y
+          sudo apt install apt-transport-https ca-certificates curl software-properties-common -y
+          curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+          sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+          sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+          sudo apt update -y
+          sudo apt install docker-ce -y
+          sudo apt install apache2 -y 
+          sudo mkdir -p /tmp/deployment/
+          sudo chmod 777 /tmp/deployment/
+          sudo apt install wget -y
+          sudo apt install unzip -y
+          sudo apt install default-jre -y
+          sudo apt install default-jdk -y
+          sudo apt install curl -y
+          curl -fsSL https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key | sudo tee /usr/share/keyrings/jenkins-keyring.asc > /dev/null
+          echo deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian-stable binary/ | sudo tee /etc/apt/sources.list.d/jenkins.list > /dev/null
+          sudo apt-get update -y
+          sudo apt-get install jenkins -y 
+          sudo systemctl start jenkins.service
+          sudo ufw enable
+          sudo ufw allow 8080
+          sudo ufw allow 8081
+          sudo ufw allow 9000
+          sudo docker run -it -p 9000:9000 --name sonarqube -d sonarqube
+          sudo chown -R jenkins:jenkins /tmp/deployment/
+          sudo docker start sonarqube
+      Tags:
+        - Key: "Name"
+          Value: "Sonarqube&Nexus"
+  EC2Instance2:
+    Type: "AWS::EC2::Instance"
+    Properties:
+      ImageId: "ami-06c4532923d4ba1ec"
+      KeyName: "Sonarqube"
+      InstanceType: "t2.micro"
+      AvailabilityZone: us-east-2b
+      SecurityGroupIds:
+        - !Ref MySecurityGroup2
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          sudo apt update -y
+          sudo apt install apt-transport-https ca-certificates curl software-properties-common -y
+          curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+          sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+          sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+          sudo apt update -y
+          sudo apt install docker-ce -y
+          sudo apt install apache2 -y
+          sudo apt update
+          sudo apt install default-jdk -y
+          wget https://archive.apache.org/dist/tomcat/tomcat-10/v10.0.8/bin/apache-tomcat-10.0.8.tar.gz
+          sudo tar xzvf apache-tomcat-10.0.8.tar.gz
+          sudo mkdir /opt/tomcat/
+          sudo mv apache-tomcat-10.0.8/* /opt/tomcat/
+          sudo chown -R www-data:www-data /opt/tomcat/
+          sudo chmod -R 755 /opt/tomcat/
+          cd /opt/tomcat/bin/
+          sudo sh startup.sh
+      Tags:
+        - Key: "Name"
+          Value: "Tomcat"
