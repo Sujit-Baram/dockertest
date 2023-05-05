@@ -4,7 +4,7 @@ Resources:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupName: "sonarandnexus"
-      GroupDescription: Security group 1
+      GroupDescription: "Enable SSH access and HTTP/S access from anywhere"
       SecurityGroupIngress:
         - IpProtocol: "tcp"
           FromPort: "22"
@@ -21,14 +21,6 @@ Resources:
         - IpProtocol: "tcp"
           FromPort: "8080"
           ToPort: "8080"
-          CidrIp: "0.0.0.0/0"
-        - IpProtocol: "tcp"
-          FromPort: 8081
-          ToPort: 8081
-          CidrIp: "0.0.0.0/0"
-        - IpProtocol: "tcp"
-          FromPort: 9000
-          ToPort: 9000
           CidrIp: "0.0.0.0/0"
   MySecurityGroup2:
     Type: AWS::EC2::SecurityGroup
@@ -52,15 +44,23 @@ Resources:
           FromPort: "443"
           ToPort: "443"
           CidrIp: "0.0.0.0/0"
+        - IpProtocol: "tcp"
+          FromPort: 8081
+          ToPort: 8081
+          CidrIp: "0.0.0.0/0"
+        - IpProtocol: "tcp"
+          FromPort: 9000
+          ToPort: 9000
+          CidrIp: "0.0.0.0/0"
   EC2Instance:
     Type: "AWS::EC2::Instance"
     Properties:
-      ImageId: "ami-06c4532923d4ba1ec"
-      KeyName: "Sonarqube"
+      ImageId: "ami-0db245b76e5c21ca1"
+      KeyName: "sonarnexus"
       InstanceType: "t2.large"
-      AvailabilityZone: us-east-2b
+      AvailabilityZone: us-west-2b
       SecurityGroupIds:
-        - !Ref MySecurityGroup1
+        - !Ref MySecurityGroup2
       UserData:
         Fn::Base64: !Sub |
           #!/bin/bash
@@ -88,21 +88,19 @@ Resources:
           sudo ufw allow 8080
           sudo ufw allow 8081
           sudo ufw allow 9000
-          sudo docker run -it -p 9000:9000 --name sonarqube -d sonarqube
           sudo chown -R jenkins:jenkins /tmp/deployment/
-          sudo docker start sonarqube
       Tags:
         - Key: "Name"
           Value: "Sonarqube&Nexus"
   EC2Instance2:
     Type: "AWS::EC2::Instance"
     Properties:
-      ImageId: "ami-06c4532923d4ba1ec"
-      KeyName: "Sonarqube"
+      ImageId: "ami-0db245b76e5c21ca1"
+      KeyName: "sonarnexus"
       InstanceType: "t2.micro"
-      AvailabilityZone: us-east-2b
+      AvailabilityZone: us-west-2b
       SecurityGroupIds:
-        - !Ref MySecurityGroup2
+        - !Ref MySecurityGroup1
       UserData:
         Fn::Base64: !Sub |
           #!/bin/bash

@@ -1,0 +1,44 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Resources:
+  EC2Instance:
+    Type: "AWS::EC2::Instance"
+    Properties:
+      ImageId: "ami-06c4532923d4ba1ec"
+      KeyName: "Sonarqube"
+      InstanceType: "t2.micro"
+      AvailabilityZone: us-east-2b
+      SecurityGroups:
+        - Ref: InstanceSecurityGroup
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          sudo apt update -y
+          sudo apt-get install vsftpd
+          sudo apt-get install pure-ftpd
+      Tags:
+        - Key: "Name"
+          Value: "FTP Server"
+  InstanceSecurityGroup:
+    Type: "AWS::EC2::SecurityGroup"
+    Properties:
+      GroupName: "Ftpserver"
+      GroupDescription: "Enable SSH access and HTTP/S access from anywhere"
+      SecurityGroupIngress:
+        - IpProtocol: "tcp"
+          FromPort: "22"
+          ToPort: "22"
+          CidrIp: "0.0.0.0/0"
+        - IpProtocol: "tcp"
+          FromPort: "80"
+          ToPort: "80"
+          CidrIp: "0.0.0.0/0"
+        - IpProtocol: "tcp"
+          FromPort: "443"
+          ToPort: "443"
+          CidrIp: "0.0.0.0/0"
+        - IpProtocol: "tcp"
+          FromPort: "21"
+          ToPort: "21"
+          CidrIp: "0.0.0.0/0"
+
+          
